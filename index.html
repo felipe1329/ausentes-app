@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ausentes — cuentas de TikTok que ya no están</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,560;9..144,700&family=Schibsted+Grotesk:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/src/styles.css" />
+  </head>
+  <body>
+    <div class="noise" aria-hidden="true"></div>
+    <header class="top">
+      <div class="brand">
+        <span class="brand-mark">Ausentes</span>
+        <span class="brand-num">Nº 09 · TikTok</span>
+      </div>
+      <p class="brand-note">La contraseña se queda en TikTok. Aquí solo entra lo que autorices.</p>
+    </header>
+
+    <main>
+      <section id="gate" class="gate">
+        <div class="hero-copy">
+          <p class="kicker">Conexión directa</p>
+          <h1>Entra con tu TikTok.</h1>
+          <p class="lede">
+            Conectas la cuenta, leemos tu perfil y pedimos a TikTok la lista de seguidos para separar las que ya no existen.
+          </p>
+          <details class="howto">
+            <summary>Qué puedes hacer desde aquí</summary>
+            <ol>
+              <li>Ver tu nombre, usuario, foto y cifras de la cuenta conectada.</li>
+              <li>Traer seguidores y seguidos con el permiso de portabilidad de TikTok.</li>
+              <li>Eliminar la conexión de esta web, y apartar las cuentas que ya no aparecen.</li>
+            </ol>
+          </details>
+        </div>
+
+        <div class="ticket">
+          <div class="stamp" aria-hidden="true">Entrar</div>
+          <p class="ticket-kicker">Tu cuenta</p>
+          <h2>Conectar</h2>
+          <p>TikTok abre su pantalla de permiso. Esta web no pide tu contraseña.</p>
+          <a id="connect" class="enter-btn" href="/api/auth/login">Conectar con TikTok</a>
+          <div id="setup" class="setup" hidden>
+            <p>Antes hay que registrar la app en TikTok for Developers.</p>
+            <ol>
+              <li>Crea una app web con Login Kit.</li>
+              <li>Registra esta redirect URI: <code id="redirect-uri"></code></li>
+              <li>Activa <code>user.info.profile</code>, <code>user.info.stats</code>, <code>portability.activity.single</code> y <code>portability.postsandprofile.single</code>.</li>
+              <li>Copia <code>.env.example</code> a <code>.env</code>, pega la clave y el secreto, y reinicia.</li>
+            </ol>
+          </div>
+          <button id="resume" type="button" class="text-btn" hidden>Abrir la lista guardada</button>
+          <button id="demo" type="button" class="text-btn">Ver un libro de ejemplo</button>
+        </div>
+      </section>
+
+      <section id="account" class="gate" hidden>
+        <div class="hero-copy">
+          <p class="kicker">Cuenta detectada</p>
+          <h1 id="display-name">Tu TikTok</h1>
+          <p class="lede" id="bio"></p>
+        </div>
+        <article class="ticket account-card">
+          <img id="avatar" class="avatar" alt="" />
+          <p id="handle" class="handle-line"></p>
+          <div id="metrics" class="metrics"></div>
+          <button id="fetch-list" type="button" class="enter-btn">Pedir mi lista</button>
+          <button id="disconnect" type="button" class="text-btn">Eliminar esta conexión</button>
+          <p id="data-note" class="data-note"></p>
+        </article>
+      </section>
+
+      <section id="desk" class="desk" hidden>
+        <div id="session-chip" class="session-chip" hidden>
+          <img id="chip-avatar" alt="" />
+          <span id="chip-name"></span>
+          <button id="disconnect-desk" type="button" class="ghost-btn">Eliminar conexión</button>
+        </div>
+        <div class="desk-head">
+          <div>
+            <p class="kicker" id="owner-kicker">Tu lista</p>
+            <h1 id="desk-title">El libro está abierto.</h1>
+          </div>
+          <div class="desk-actions">
+            <button id="fetch-list-desk" type="button" class="ghost-btn">Actualizar lista</button>
+            <button id="verify" type="button" class="solid-btn">Buscar cuentas ausentes</button>
+            <button id="stop" type="button" class="ghost-btn" hidden>Detener</button>
+          </div>
+        </div>
+
+        <p id="limit" class="limit">
+          Si un perfil no responde, queda como ausente. Ábrelo y, si sigue en tu lista de TikTok, pulsa Siguiendo para quitarlo. Eliminar la conexión borra el acceso de esta web.
+        </p>
+
+        <div id="stats" class="stats"></div>
+        <div id="progress" class="progress" hidden>
+          <div class="progress-bar"><span id="progress-fill"></span></div>
+          <p id="progress-label"></p>
+        </div>
+
+        <div class="ledger">
+          <div class="ledger-tools">
+            <div id="tabs" class="tabs" role="tablist"></div>
+            <label class="search">
+              <span class="sr">Buscar usuario</span>
+              <input id="query" type="search" placeholder="Buscar @usuario" autocomplete="off" />
+            </label>
+          </div>
+          <div class="bulk">
+            <button id="verify-visible" type="button" class="ghost-btn">Verificar esta vista</button>
+            <button id="clean-missing" type="button" class="ghost-btn">Apartar ausentes</button>
+            <button id="export" type="button" class="ghost-btn">Exportar CSV</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Usuario</th>
+                  <th>
+                    <button id="sort-date" type="button" class="sort">Desde</button>
+                  </th>
+                  <th>Relación</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="rows"></tbody>
+            </table>
+          </div>
+          <div class="pager">
+            <p id="count-label"></p>
+            <button id="more" type="button" class="ghost-btn" hidden>Mostrar más</button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="legal-footer">
+      <a href="/terms.html">Términos</a>
+      <a href="/privacy.html">Privacidad</a>
+    </footer>
+    <p id="status" class="status" role="status" aria-live="polite"></p>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
