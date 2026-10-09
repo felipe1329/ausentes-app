@@ -2,8 +2,14 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "framework": "vite",
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/proxy?path=$1"
+    }
+  ],
   "functions": {
-    "api/[...path].js": {
+    "api/proxy.js": {
       "maxDuration": 60
     }
   }
