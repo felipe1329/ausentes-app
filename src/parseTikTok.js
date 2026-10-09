@@ -1,5 +1,6 @@
 const USER_FIELDS = ["UserName", "Username", "username", "uniqueId", "unique_id"];
 const DATE_FIELDS = ["Date", "date", "CreateTime", "createTime"];
+const NAME_FIELDS = ["NickName", "Nickname", "nickName", "DisplayName", "display_name"];
 
 function cleanUsername(value) {
   return String(value || "")
@@ -35,6 +36,7 @@ function personFromRecord(record) {
   return {
     username,
     date: readField(record, DATE_FIELDS),
+    nickname: readField(record, NAME_FIELDS),
   };
 }
 
@@ -49,10 +51,15 @@ function addPerson(bucket, person) {
   const key = person.username.toLowerCase();
   const current = bucket.get(key);
   if (!current) {
-    bucket.set(key, { username: person.username, date: person.date || "" });
+    bucket.set(key, {
+      username: person.username,
+      date: person.date || "",
+      nickname: person.nickname || "",
+    });
     return;
   }
   if (!current.date && person.date) current.date = person.date;
+  if (!current.nickname && person.nickname) current.nickname = person.nickname;
 }
 
 function walk(node, key, following, followers) {
@@ -121,14 +128,17 @@ function kindFromText(text, filename = "") {
 export function parseTxt(text, filename = "") {
   const kind = kindFromText(text, filename);
   const people = [];
-  const pattern = /UserName:\s*@?([A-Za-z0-9._]{2,24})/gi;
-  const dates = [...text.matchAll(/Date:\s*([^\n\r]+)/gi)].map((match) => match[1].trim());
-  let index = 0;
-  let match = pattern.exec(text);
-  while (match) {
-    people.push({ username: match[1], date: dates[index] || "" });
-    index += 1;
-    match = pattern.exec(text);
+  const chunks = text.split(/(?=Date:)/i);
+  for (const chunk of chunks) {
+    const user = chunk.match(/UserName:\s*@?([A-Za-z0-9._]{2,24})/i);
+    if (!user) continue;
+    const date = chunk.match(/Date:\s*([^\n\r]+)/i);
+    const nick = chunk.match(/NickName:\s*([^\n\r]+)/i);
+    people.push({
+      username: user[1],
+      date: date?.[1].trim() || "",
+      nickname: nick?.[1].trim() || "",
+    });
   }
 
   if (!people.length) {

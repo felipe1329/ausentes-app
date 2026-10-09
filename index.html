@@ -71,6 +71,12 @@
           <p id="handle" class="handle-line"></p>
           <div id="metrics" class="metrics"></div>
           <button id="fetch-list" type="button" class="enter-btn">Pedir mi lista</button>
+          <button id="remove-deleted" type="button" class="enter-btn">Quitar cuentas borradas</button>
+          <p id="remove-help" class="data-note">Busca las que ya no existen y las que TikTok nombra user. Abre cada perfil para que pulses Siguiendo.</p>
+          <label class="file-btn">
+            Subir datos de TikTok
+            <input id="import-file" type="file" accept=".json,.txt,.zip,application/json,text/plain,application/zip" />
+          </label>
           <button id="disconnect" type="button" class="text-btn">Eliminar esta conexión</button>
           <p id="data-note" class="data-note"></p>
         </article>
@@ -90,13 +96,23 @@
           <div class="desk-actions">
             <button id="fetch-list-desk" type="button" class="ghost-btn">Actualizar lista</button>
             <button id="verify" type="button" class="solid-btn">Buscar cuentas ausentes</button>
+            <button id="remove-deleted-desk" type="button" class="solid-btn">Quitar cuentas borradas</button>
             <button id="stop" type="button" class="ghost-btn" hidden>Detener</button>
           </div>
         </div>
 
         <p id="limit" class="limit">
-          Si un perfil no responde, queda como ausente. Ábrelo y, si sigue en tu lista de TikTok, pulsa Siguiendo para quitarlo. Eliminar la conexión borra el acceso de esta web.
+          Quitar cuentas borradas abre las que ya no existen y las que se llaman user. En TikTok pulsa Siguiendo. Eliminar la conexión solo borra el acceso de esta web.
         </p>
+
+        <div id="removal" class="removal" hidden>
+          <p id="removal-copy"></p>
+          <div class="desk-actions">
+            <a id="removal-open" class="solid-btn" href="#" target="_blank" rel="noreferrer">Abrir en TikTok</a>
+            <button id="removal-done" type="button" class="ghost-btn">Ya dejé de seguirla</button>
+            <button id="removal-skip" type="button" class="ghost-btn">Saltar</button>
+          </div>
+        </div>
 
         <div id="stats" class="stats"></div>
         <div id="progress" class="progress" hidden>

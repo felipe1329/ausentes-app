@@ -169,6 +169,13 @@ h1 {
 
 .enter-btn { margin-top: 8px; }
 
+.account-card .enter-btn,
+.account-card .file-btn {
+  width: 100%;
+  margin-top: 10px;
+  box-sizing: border-box;
+}
+
 .setup {
   margin-top: 16px;
   color: #5c4d40;
@@ -265,6 +272,18 @@ h1 {
   max-width: 720px;
   line-height: 1.5;
 }
+
+.removal {
+  margin: 8px 0 18px;
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--panel);
+}
+
+.removal p { margin: 0 0 12px; }
+
+.removal .solid-btn { text-decoration: none; }
 
 .stats {
   display: grid;

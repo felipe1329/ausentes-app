@@ -45,6 +45,9 @@ const els = {
   metrics: document.querySelector("#metrics"),
   fetchList: document.querySelector("#fetch-list"),
   fetchListDesk: document.querySelector("#fetch-list-desk"),
+  removeDeletedBtn: document.querySelector("#remove-deleted"),
+  removeDeletedDesk: document.querySelector("#remove-deleted-desk"),
+  importFile: document.querySelector("#import-file"),
   disconnect: document.querySelector("#disconnect"),
   disconnectDesk: document.querySelector("#disconnect-desk"),
   dataNote: document.querySelector("#data-note"),
@@ -72,9 +75,36 @@ const els = {
   progress: document.querySelector("#progress"),
   progressFill: document.querySelector("#progress-fill"),
   progressLabel: document.querySelector("#progress-label"),
+  removal: document.querySelector("#removal"),
+  removalCopy: document.querySelector("#removal-copy"),
+  removalOpen: document.querySelector("#removal-open"),
+  removalDone: document.querySelector("#removal-done"),
+  removalSkip: document.querySelector("#removal-skip"),
 };
 
 let stopRequested = false;
+let removal = [];
+
+function isPlaceholderName(value) {
+  return String(value || "").trim().toLowerCase() === "user";
+}
+
+function findPerson(username) {
+  const key = String(username || "").toLowerCase();
+  return (
+    state.following.find((person) => person.username.toLowerCase() === key) ||
+    state.followers.find((person) => person.username.toLowerCase() === key)
+  );
+}
+
+function isDeletedAccount(person) {
+  if (!person) return false;
+  const check = state.checks[person.username.toLowerCase()];
+  if (check?.status === "missing") return true;
+  if (isPlaceholderName(check?.displayName)) return true;
+  if (isPlaceholderName(person.nickname) || isPlaceholderName(person.username)) return true;
+  return false;
+}
 
 function setStatus(message) {
   els.status.textContent = message;
@@ -154,7 +184,7 @@ function peopleForView(view) {
     people = state.followers.filter((person) => !state.followingSet.has(person.username.toLowerCase()));
   }
   if (view === "missing") {
-    people = uniquePeople().filter((person) => state.checks[person.username.toLowerCase()]?.status === "missing");
+    people = uniquePeople().filter((person) => isDeletedAccount(person));
   }
   if (view === "cleaned") {
     people = uniquePeople().filter((person) => state.cleaned[person.username.toLowerCase()]);
@@ -170,6 +200,7 @@ function peopleForView(view) {
       const check = state.checks[person.username.toLowerCase()];
       return (
         person.username.toLowerCase().includes(query) ||
+        (person.nickname || "").toLowerCase().includes(query) ||
         (check?.displayName || "").toLowerCase().includes(query)
       );
     });
@@ -186,10 +217,7 @@ function peopleForView(view) {
 }
 
 function countMissing() {
-  return uniquePeople().filter((person) => {
-    const key = person.username.toLowerCase();
-    return state.checks[key]?.status === "missing" && !state.cleaned[key];
-  }).length;
+  return uniquePeople().filter((person) => isDeletedAccount(person) && !state.cleaned[person.username.toLowerCase()]).length;
 }
 
 function formatDate(value) {
@@ -200,9 +228,13 @@ function formatDate(value) {
 
 function statusPill(username) {
   const check = state.checks[username.toLowerCase()];
+  const person = findPerson(username);
+  if (check?.status === "missing") return `<span class="pill missing">No existe</span>`;
+  if (isPlaceholderName(check?.displayName) || isPlaceholderName(person?.nickname) || isPlaceholderName(username)) {
+    return `<span class="pill missing">Nombre user</span>`;
+  }
   if (!check) return `<span class="pill pending">Sin revisar</span>`;
   if (check.status === "alive") return `<span class="pill alive">Sigue ahí</span>`;
-  if (check.status === "missing") return `<span class="pill missing">No existe</span>`;
   return `<span class="pill unknown">Dudosa</span>`;
 }
 
@@ -222,6 +254,8 @@ function showDesk() {
 }
 
 function openBook(merged, sourceName) {
+  removal = [];
+  if (els.removal) els.removal.hidden = true;
   state.owner = merged.owner || connectedProfile?.username || "";
   state.sourceName = sourceName;
   state.following = merged.following || [];
@@ -273,6 +307,8 @@ async function disconnectAccount() {
   state.checks = {};
   state.cleaned = {};
   els.sessionChip.hidden = true;
+  els.removal.hidden = true;
+  removal = [];
   els.account.hidden = true;
   els.desk.hidden = true;
   els.gate.hidden = false;
@@ -368,7 +404,7 @@ function renderStats() {
   const openMissing = countMissing();
   const apartadas = Object.keys(state.cleaned).length;
   const missingNote = openMissing
-    ? "TikTok ya no encuentra estas cuentas"
+    ? "Cuentas que ya no existen o se llaman user"
     : apartadas
       ? "Ya están en Apartadas"
       : "Todavía no revisas la lista";
@@ -414,7 +450,7 @@ function renderRows() {
   els.rows.innerHTML = slice
     .map((person) => {
       const check = state.checks[person.username.toLowerCase()];
-      const name = check?.displayName && check.displayName !== person.username ? check.displayName : "";
+      const name = check?.displayName && check.displayName !== person.username ? check.displayName : person.nickname || "";
       const profile = `https://www.tiktok.com/@${encodeURIComponent(person.username)}`;
       const cleaned = Boolean(state.cleaned[person.username.toLowerCase()]);
       return `
@@ -490,7 +526,8 @@ async function ingestFiles(fileList, sourceName) {
       throw new Error("No encontré listas de Following ni de Followers.");
     }
     openBook(merged, sourceName || files.map((file) => file.name).join(", "));
-    setStatus(`${merged.following.length.toLocaleString("es")} seguidos · ${merged.followers.length.toLocaleString("es")} seguidores`);
+    const summary = `${merged.following.length.toLocaleString("es")} seguidos · ${merged.followers.length.toLocaleString("es")} seguidores`;
+    setStatus(sourceName === "archivo" ? `${summary}. Pulsa Quitar cuentas borradas.` : summary);
   } catch (error) {
     setStatus(error.message || "No pude leer ese archivo.");
   }
@@ -579,6 +616,72 @@ function wait(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+function deletedLabel(person) {
+  const check = state.checks[person.username.toLowerCase()];
+  if (check?.status === "missing") return "ya no existe";
+  return "se llama user";
+}
+
+function showRemoval() {
+  const person = removal[0];
+  if (!person) {
+    els.removal.hidden = true;
+    return;
+  }
+  els.removal.hidden = false;
+  els.removalCopy.textContent = `@${person.username} ${deletedLabel(person)}. Quedan ${removal.length.toLocaleString("es")}. Ábrela y pulsa Siguiendo.`;
+  els.removalOpen.href = `https://www.tiktok.com/@${encodeURIComponent(person.username)}`;
+}
+
+function advanceRemoval(markCleaned) {
+  const person = removal.shift();
+  if (markCleaned && person) state.cleaned[person.username.toLowerCase()] = true;
+  saveStorage();
+  if (!removal.length) {
+    els.removal.hidden = true;
+    state.view = "cleaned";
+    render();
+    setStatus("Listo. En TikTok quedan quitadas las que abriste y marcaste con Siguiendo.");
+    return;
+  }
+  state.view = "missing";
+  render();
+  showRemoval();
+}
+
+async function removeDeletedAccounts() {
+  if (state.running) return;
+  if (!state.following.length) {
+    const message = "Esta conexión todavía no trae a quién sigues. Sube el archivo de datos de TikTok para quitar las borradas.";
+    if (els.dataNote) els.dataNote.textContent = message;
+    setStatus(message);
+    return;
+  }
+
+  showDesk();
+  const pending = state.following
+    .filter((person) => !state.cleaned[person.username.toLowerCase()])
+    .filter((person) => {
+      const check = state.checks[person.username.toLowerCase()];
+      return !check || check.status === "unknown";
+    })
+    .map((person) => person.username);
+  if (pending.length) await verifyList(pending);
+
+  removal = state.following.filter(
+    (person) => isDeletedAccount(person) && !state.cleaned[person.username.toLowerCase()],
+  );
+  if (!removal.length) {
+    els.removal.hidden = true;
+    setStatus("No hay cuentas borradas ni perfiles con el nombre user.");
+    return;
+  }
+  state.view = "missing";
+  render();
+  showRemoval();
+  setStatus(`${removal.length.toLocaleString("es")} cuentas para quitar. Abre la primera y pulsa Siguiendo.`);
+}
+
 els.resume.addEventListener("click", () => showDesk());
 
 els.demo.addEventListener("click", async () => {
@@ -590,6 +693,19 @@ els.demo.addEventListener("click", async () => {
 
 els.fetchList.addEventListener("click", requestList);
 els.fetchListDesk.addEventListener("click", requestList);
+els.removeDeletedBtn.addEventListener("click", () => {
+  removeDeletedAccounts().catch((error) => setStatus(error.message));
+});
+els.removeDeletedDesk.addEventListener("click", () => {
+  removeDeletedAccounts().catch((error) => setStatus(error.message));
+});
+els.importFile.addEventListener("change", () => {
+  const files = els.importFile.files;
+  ingestFiles(files, "archivo");
+  els.importFile.value = "";
+});
+els.removalDone.addEventListener("click", () => advanceRemoval(true));
+els.removalSkip.addEventListener("click", () => advanceRemoval(false));
 els.disconnect.addEventListener("click", disconnectAccount);
 els.disconnectDesk.addEventListener("click", disconnectAccount);
 
@@ -661,7 +777,7 @@ els.cleanMissing.addEventListener("click", () => {
   let moved = 0;
   for (const person of uniquePeople()) {
     const key = person.username.toLowerCase();
-    if (state.checks[key]?.status === "missing" && !state.cleaned[key]) {
+    if (isDeletedAccount(person) && !state.cleaned[key]) {
       state.cleaned[key] = true;
       moved += 1;
     }
