@@ -41,10 +41,14 @@ export function tiktokConfig(requestHost, protocol = "http") {
   };
 }
 
-export const LOGIN_SCOPES = [
-  "user.info.basic",
-  "user.info.profile",
-  "user.info.stats",
-  "portability.activity.single",
-  "portability.postsandprofile.single",
-].join(",");
+const LOGIN_KIT_SCOPES = ["user.info.basic", "user.info.profile", "user.info.stats"];
+const PORTABILITY_SCOPES = ["portability.activity.single", "portability.postsandprofile.single"];
+
+export function loginScopes(clientKey = "") {
+  // Las claves de Sandbox empiezan por "sb". Data Portability no existe ahí:
+  // pedirlo hace que TikTok rechace todo el inicio de sesión con error "scope".
+  const scopes = clientKey.startsWith("sb")
+    ? LOGIN_KIT_SCOPES
+    : [...LOGIN_KIT_SCOPES, ...PORTABILITY_SCOPES];
+  return scopes.join(",");
+}

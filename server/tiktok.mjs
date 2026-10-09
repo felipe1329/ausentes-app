@@ -1,6 +1,6 @@
 import JSZip from "jszip";
 import { mergeImports, parseJsonText, parseTxt } from "../src/parseTikTok.js";
-import { LOGIN_SCOPES } from "./env.mjs";
+import { loginScopes } from "./env.mjs";
 
 const TOKEN_URL = "https://open.tiktokapis.com/v2/oauth/token/";
 const REVOKE_URL = "https://open.tiktokapis.com/v2/oauth/revoke/";
@@ -38,7 +38,7 @@ export function authorizeUrl({ clientKey, redirectUri, state }) {
   const url = new URL("https://www.tiktok.com/v2/auth/authorize/");
   url.searchParams.set("client_key", clientKey);
   url.searchParams.set("response_type", "code");
-  url.searchParams.set("scope", LOGIN_SCOPES);
+  url.searchParams.set("scope", loginScopes(clientKey));
   url.searchParams.set("redirect_uri", redirectUri);
   url.searchParams.set("state", state);
   return url.toString();

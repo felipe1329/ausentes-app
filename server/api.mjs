@@ -136,7 +136,9 @@ async function loadProfile(session, config, res) {
 
 async function syncData(session, config, res) {
   if (!session.scope?.includes("portability.")) {
-    const error = new Error("Vuelve a conectar y acepta el permiso para traer tu lista.");
+    const error = new Error(
+      "El Sandbox de TikTok muestra tu cuenta, pero no entrega la lista de seguidos. Eso se activa cuando TikTok apruebe la app en Production.",
+    );
     error.code = "missing_scope";
     throw error;
   }

@@ -343,6 +343,10 @@ async function bootTikTok() {
   const me = await fetch("/api/tiktok/me").then((response) => response.json());
   if (!me.connected) return;
   if (me.profile) showProfile(me.profile);
+  if (me.scope && !me.scope.includes("portability.")) {
+    els.dataNote.textContent =
+      "El Sandbox de TikTok muestra tu cuenta, pero no entrega la lista de seguidos. Eso se activa cuando TikTok apruebe la app en Production.";
+  }
   if (me.warning) setStatus(me.warning);
   if (me.book?.following?.length || me.book?.followers?.length) {
     openBook(me.book, "tiktok");
